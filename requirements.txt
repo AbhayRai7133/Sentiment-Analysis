@@ -1,0 +1,17 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+fastapi
+uvicorn
+pydantic
+transformers==4.53.2
+mlflow==3.1.4
+safetensors
+sentencepiece
+pandas
+numpy
+scikit-learn
+accelerate
+evaluate
+datasets
+torch
+torchvision

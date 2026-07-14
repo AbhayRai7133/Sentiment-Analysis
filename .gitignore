@@ -1,0 +1,8 @@
+.venv/
+.venv*
+venv/
+.git/
+trained_model/
+mlruns/
+*.db
+__pycache__/
