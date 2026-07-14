@@ -18,9 +18,10 @@ try:
     loaded_model = mlflow.transformers.load_model(model_uri=MODEL_URI)
     print("Model loaded successfully from MLflow!")
 except Exception as e:
-    print(f"Failed to load from MLflow Registry ({e}), falling back to local weights...")
+    print(f"Failed to load from MLflow Registry ({e}), falling back to public Hugging Face weights...")
     from transformers import pipeline
-    loaded_model = pipeline("sentiment-analysis", model="./trained_model", tokenizer="./trained_model")
+    # Changed from "./trained_model" to the public registry identifier
+    loaded_model = pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
 
 class ReviewRequest(BaseModel):
     review: str
