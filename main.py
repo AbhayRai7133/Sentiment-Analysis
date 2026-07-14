@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import mlflow
 import mlflow.transformers
+from transformers import pipeline
+import os
 
 app = FastAPI(
     title="Review Intelligence API",
@@ -13,15 +15,25 @@ mlflow.set_tracking_uri("sqlite:///mlflow.db")
 
 MODEL_URI = "models:/review-intelligence/1"
 
-try:
-    print(f"Loading model from MLflow Registry: {MODEL_URI}...")
-    loaded_model = mlflow.transformers.load_model(model_uri=MODEL_URI)
-    print("Model loaded successfully from MLflow!")
-except Exception as e:
-    print(f"Failed to load from MLflow Registry ({e}), falling back to public Hugging Face weights...")
-    from transformers import pipeline
-    # Changed from "./trained_model" to the public registry identifier
+IS_RENDER = os.getenv("RENDER") is not None
+
+loaded_model = None
+
+if not IS_RENDER:
+    try:
+        import mlflow
+        MODEL_URI = "models:/sentiment_model/Production"
+        print(f"Loading model from MLflow Registry: {MODEL_URI}...")
+        loaded_model = mlflow.transformers.load_model(model_uri=MODEL_URI)
+        print("Model loaded successfully from MLflow!")
+    except Exception as e:
+        print(f"Local MLflow load failed ({e}), falling back to public weights...")
+
+# If we are on Render or MLflow failed locally, use the direct pipeline fallback
+if loaded_model is None:
+    print("Initializing production environment with public Hugging Face weights...")
     loaded_model = pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
+    print("Public pipeline loaded successfully!")
 
 class ReviewRequest(BaseModel):
     review: str
