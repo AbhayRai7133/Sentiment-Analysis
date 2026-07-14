@@ -1,7 +1,5 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import mlflow
-import mlflow.transformers
 from transformers import pipeline
 import os
 
@@ -11,18 +9,16 @@ app = FastAPI(
     version="1.0.0"
 )
 
-mlflow.set_tracking_uri("sqlite:///mlflow.db")
-
-MODEL_URI = "models:/review-intelligence/1"
-
+# Check if we are running in production on Render
 IS_RENDER = os.getenv("RENDER") is not None
-
 loaded_model = None
 
 if not IS_RENDER:
     try:
         import mlflow
-        MODEL_URI = "models:/sentiment_model/Production"
+        # Move tracking URI setup INSIDE the local check so Render safely ignores it
+        mlflow.set_tracking_uri("sqlite:///mlflow.db")
+        MODEL_URI = "models:/review-intelligence/1"
         print(f"Loading model from MLflow Registry: {MODEL_URI}...")
         loaded_model = mlflow.transformers.load_model(model_uri=MODEL_URI)
         print("Model loaded successfully from MLflow!")
