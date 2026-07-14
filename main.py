@@ -9,14 +9,12 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Check if we are running in production on Render
 IS_RENDER = os.getenv("RENDER") is not None
 loaded_model = None
 
 if not IS_RENDER:
     try:
         import mlflow
-        # Move tracking URI setup INSIDE the local check so Render safely ignores it
         mlflow.set_tracking_uri("sqlite:///mlflow.db")
         MODEL_URI = "models:/review-intelligence/1"
         print(f"Loading model from MLflow Registry: {MODEL_URI}...")
@@ -25,7 +23,7 @@ if not IS_RENDER:
     except Exception as e:
         print(f"Local MLflow load failed ({e}), falling back to public weights...")
 
-# If we are on Render or MLflow failed locally, use the direct pipeline fallback
+# Uniformly assign the pipeline object
 if loaded_model is None:
     print("Initializing production environment with public Hugging Face weights...")
     loaded_model = pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
@@ -48,12 +46,13 @@ def predict_sentiment(payload: ReviewRequest):
         raise HTTPException(status_code=400, detail="Review text cannot be empty.")
     
     try:
-        if isinstance(loaded_model, dict) and "model" in loaded_model:
-            from transformers import pipeline
-            pipe = pipeline("sentiment-analysis", model=loaded_model["model"], tokenizer=loaded_model["tokenizer"])
-            result = pipe(payload.review)[0]
-        else:
+        # Directly execute the inference pipeline smoothly
+        if hasattr(loaded_model, "__call__"):
             result = loaded_model(payload.review)[0]
+        else:
+            # Fallback wrapper handle if loaded_model acts as a container dict locally
+            pipe = pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
+            result = pipe(payload.review)[0]
             
         label_mapping = {
             "LABEL_1": "POSITIVE",
