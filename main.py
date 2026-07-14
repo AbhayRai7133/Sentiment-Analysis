@@ -23,10 +23,10 @@ if not IS_RENDER:
     except Exception as e:
         print(f"Local MLflow load failed ({e}), falling back to public weights...")
 
-# Uniformly assign the pipeline object with the ultra-lightweight model
+# Uniformly assign the pipeline object with the CORRECT ultra-lightweight model
 if loaded_model is None:
     print("Initializing production environment with lightweight Hugging Face weights...")
-    loaded_model = pipeline("sentiment-analysis", model="pau772/MiniLM-L6-H384-uncased-sst2")
+    loaded_model = pipeline("sentiment-analysis", model="philschmid/MiniLM-L6-H384-uncased-sst2")
     print("Public pipeline loaded successfully!")
 
 class ReviewRequest(BaseModel):
@@ -46,12 +46,10 @@ def predict_sentiment(payload: ReviewRequest):
         raise HTTPException(status_code=400, detail="Review text cannot be empty.")
     
     try:
-        # Directly execute the inference pipeline smoothly
         if hasattr(loaded_model, "__call__"):
             result = loaded_model(payload.review)[0]
         else:
-            # Fallback wrapper
-            pipe = pipeline("sentiment-analysis", model="pau772/MiniLM-L6-H384-uncased-sst2")
+            pipe = pipeline("sentiment-analysis", model="philschmid/MiniLM-L6-H384-uncased-sst2")
             result = pipe(payload.review)[0]
             
         label_mapping = {
