@@ -5,7 +5,7 @@ import os
 
 app = FastAPI(
     title="Review Intelligence API",
-    description="Sentiment Analysis using DistilBERT and MLflow Model Registry",
+    description="Optimized Sentiment Analysis API",
     version="1.0.0"
 )
 
@@ -23,10 +23,10 @@ if not IS_RENDER:
     except Exception as e:
         print(f"Local MLflow load failed ({e}), falling back to public weights...")
 
-# Uniformly assign the pipeline object
+# Uniformly assign the pipeline object with the ultra-lightweight model
 if loaded_model is None:
-    print("Initializing production environment with public Hugging Face weights...")
-    loaded_model = pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
+    print("Initializing production environment with lightweight Hugging Face weights...")
+    loaded_model = pipeline("sentiment-analysis", model="pau772/MiniLM-L6-H384-uncased-sst2")
     print("Public pipeline loaded successfully!")
 
 class ReviewRequest(BaseModel):
@@ -50,8 +50,8 @@ def predict_sentiment(payload: ReviewRequest):
         if hasattr(loaded_model, "__call__"):
             result = loaded_model(payload.review)[0]
         else:
-            # Fallback wrapper handle if loaded_model acts as a container dict locally
-            pipe = pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
+            # Fallback wrapper
+            pipe = pipeline("sentiment-analysis", model="pau772/MiniLM-L6-H384-uncased-sst2")
             result = pipe(payload.review)[0]
             
         label_mapping = {
